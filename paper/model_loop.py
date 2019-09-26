@@ -1,7 +1,3 @@
-'''
-This script compares the kbcENCE opioid overdose query to a text-only RNN
-and a full-EHR encoder-decoder model across multiple train-test splits
-'''
 import pandas as pd
 import numpy as np
 import h5py
@@ -14,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from scipy.sparse import load_npz
 
 import metrics.classification as mc
-from models.supervised import RNN, EHRClassifier
+from models.supervised import RNN, EnrichedRNN
 
 # Directories for reading and writing data
 indir = 'C:/data/syndromic/'

@@ -14,6 +14,7 @@ def parse_arguments(parser):
     parser.add_argument('--data_dir', type=str, default=None)
     parser.add_argument('--input_file', type=str, default=None)
     parser.add_argument('--text_column', type=str, default='text')
+    parser.add_argument('--target_column', type=str, default='code')
     parser.add_argument('--clean_text', type=bool, default=False)
     parser.add_argument('--convert_numerals', type=bool, default=False)
     parser.add_argument('--min_df', type=int, default=5)
@@ -116,7 +117,8 @@ if __name__ == 'main':
     Part 2: Converting the discrete variables to wide format
     '''
     # Reading in the data
-    slim_cols = list(records.columns.drop(args.text_column))
+    slim_cols = list(records.columns.drop([args.text_column,
+                                           args.target_column]))
     records = good_recs[slim_cols]
     
     # Making the sparse matrices
