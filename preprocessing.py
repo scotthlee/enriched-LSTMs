@@ -91,7 +91,7 @@ if __name__ == 'main':
     for i, doc in enumerate(text):
         if len(doc.split()) > max_length:
             clipped_docs[i] = ' '.join(doc.split()[0:max_length])
-
+    
     # Weeding out docs with tokens that CountVectorizer doesn't recognize;
     # this shouldn't be necessary, but I can't be bothered to debug it.
     in_vocab = np.where([np.all([word in vocab.keys()
@@ -100,10 +100,10 @@ if __name__ == 'main':
     good_docs = [clipped_docs[i] for i in in_vocab]
     good_recs = records.iloc[in_vocab, :]
     good_recs.to_csv(args.data_dir + 'records_clipped.csv', index=False)
-
+    
     # Preparing the HDF5 file to hold the output
     output = h5py.File(args.data_dir + 'word_sents.hdf5',  mode='w')
-
+    
     # Running and saving the splits for the inputs; going with np.uin16
     # for the dtype since the vocab size is much smaller than before
     int_sents = np.array([tt.pad_integers(tt.to_integer(doc.split(), vocab),
