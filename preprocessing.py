@@ -11,14 +11,22 @@ import tools.generic as tg
 import tools.text as tt
 
 def parse_arguments(parser):
-    parser.add_argument('--data_dir', type=str, default=None)
-    parser.add_argument('--input_file', type=str, default=None)
-    parser.add_argument('--text_column', type=str, default='text')
-    parser.add_argument('--target_column', type=str, default='code')
-    parser.add_argument('--clean_text', type=bool, default=False)
-    parser.add_argument('--convert_numerals', type=bool, default=False)
-    parser.add_argument('--min_df', type=int, default=5)
-    parser.add_argument('--max_length', type=int, default=100)
+    parser.add_argument('--data_dir', type=str, default=None,
+                        help='directory holding the raw data')
+    parser.add_argument('--input_file', type=str, default=None,
+                        help='CSV file holding the original dataset')
+    parser.add_argument('--text_column', type=str, default='text',
+                        help='column holding the free text')
+    parser.add_argument('--target_column', type=str, default='code',
+                        help='column to use as the target for classification')
+    parser.add_argument('--clean_text', type=bool, default=False,
+                        help='whether to clean the free text')
+    parser.add_argument('--convert_numerals', type=bool, default=False,
+                        help='whether to convert numerals to words')
+    parser.add_argument('--min_df', type=int, default=5,
+                        help='freq cutoff for replacing tokens with rareword')
+    parser.add_argument('--max_length', type=int, default=100,
+                        help='length at which to truncate text')
     args = parser.parse_args()
     return args
 
