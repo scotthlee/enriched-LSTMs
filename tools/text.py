@@ -128,22 +128,5 @@ def clean_column(docs, remove_empty=True, numerals=True):
     docs = remove_special(docs)
     if numerals:
         docs = remove_numerals(docs)
-    docs = [doc.replace(' ve ', ' have ') for doc in docs]
-    docs = [doc.replace(' c o ', ' co ') for doc in docs]
-    docs = [doc.replace(' b l ', ' bl ') for doc in docs]
-    docs = [doc.replace(' s p ', ' sp ') for doc in docs]
-    docs = [doc.replace(' pn ', ' pain ') for doc in docs]
-    docs = [doc.replace(' n v d ', ' nvd ') for doc in docs]
-    docs = [doc.replace('hrs', ' hrs ') for doc in docs]
-    docs = [doc.replace('wks', ' wks ') for doc in docs]
-    docs = [doc.replace('ems', ' ems ') for doc in docs]
-    docs = [doc.replace('amb', ' amb ') for doc in docs]
-    docs = [doc.replace('amb ulance', 'ambulance') for doc in docs]
-    docs = [doc.replace('mins', ' mins ') for doc in docs]
-    docs = [doc.replace('cc ', ' ') for doc in docs]
-    docs = [doc.replace('chief complaint quote', ' ') for doc in docs]
-    notes = [doc.replace('x zero d', ' ') for doc in docs]
-    notes = [doc.replace('zero a', ' ') for doc in docs]
-    docs = [re.sub(r'\@.*\@', ' ', doc) for doc in docs]
     docs = remove_whitespace(docs)
     return docs

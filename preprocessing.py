@@ -14,7 +14,12 @@ def parse_arguments(parser):
     parser.add_argument('--data_dir', type=str, default=None,
                         help='directory holding the raw data')
     parser.add_argument('--input_file', type=str, default=None,
-                        help='CSV file holding the original dataset')
+                        help='file holding the original dataset')
+    parser.add_argument('--file_type', type=str, default='csv',
+                        choices=['csv', 'tsv'], 
+                        help='format for the input file')
+    parser.add_argument('--encoding', type=str, default='latin1',
+                        help='encoding used in the input file')
     parser.add_argument('--text_column', type=str, default='text',
                         help='column holding the free text')
     parser.add_argument('--target_column', type=str, default='code',
@@ -30,24 +35,31 @@ def parse_arguments(parser):
     args = parser.parse_args()
     return args
 
-if __name__ == 'main':
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     args = parse_arguments(parser)
     
     '''
     Part 1: Reading in the data and processing the text
     '''
-    
     # Importing the data
-    records = pd.read_csv(args.data_dir + args.input_file)
+    if args.file_type == 'csv':
+        records = pd.read_csv(args.data_dir + args.input_file,
+                              encoding=args.encoding)
+    elif args.file_type == 'tsv':
+        records = pd.read_csv(args.data_dir + args.input_file, 
+                              encoding=args.encoding,
+                              sep='\t')
     
     # Optional text cleaning
     if args.clean_text:
-        text = tt.clean_column(records[args.text_column], 
+        text = tt.clean_column(records[args.text_column].astype(str),
+                               remove_empty=False, 
                                numerals=args.convert_numerals)
     
     # Setting the text column to use for vectorization n stuff
-    text = [doc for doc in records[args.text_column].astype(str)]
+    else:   
+        text = [doc for doc in records[args.text_column].astype(str)]
     
     # First-pass vectorization to get the overall vocab
     text_vec = CountVectorizer(binary=False,
@@ -70,12 +82,9 @@ if __name__ == 'main':
                 doc = doc.replace(word, 'rareword')
         text[num] = doc
     
-    # Writing the new text to disk
-    pd.Series(text).to_csv(filedir + 'unk5_cc.csv', index=False)
-    
     # Second-pass vectorization on the reduced-size corpus
     min_vec = CountVectorizer(binary=False,
-                              nalyzer='word',
+                              analyzer='word',
                               ngram_range=(1, 1),
                               token_pattern='\\b\\w+\\b',
                               decode_error='ignore')
@@ -138,4 +147,6 @@ if __name__ == 'main':
     
     # Writing the files to disk
     save_npz(args.data_dir + 'sparse_records', sparse_csr)
-    sparse_vocab.to_csv(args.data_dir + 'sparse_vocab.csv', index=False)
+    sparse_vocab.to_csv(args.data_dir + 'sparse_vocab.csv',
+                        index=False,
+                        header=False)
