@@ -56,7 +56,7 @@ def RNN(vocab_size,
     return model
 
 # Hyrbid model for EHRs + clinical notes
-def EnrichedRNN(sparse_size,
+def EnrichedLSTM(sparse_size,
                   vocab_size,
                   max_length,
                   method='init',
@@ -133,6 +133,7 @@ def EnrichedRNN(sparse_size,
         pre_dense, _, _ = rnn(text_embedding)
     
     # Adding the final dense layer
+    print(pre_dense.shape)
     output = Dense(units=output_size, activation=activation)(pre_dense)
     
     # Putting everything together

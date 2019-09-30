@@ -1,14 +1,18 @@
 import pandas as pd
 import numpy as np
+import argparse
 import h5py
 import re
 
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.models import load_model
+from keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
 from scipy.sparse import load_npz
 
-from models.supervised import RNN, EnrichedRNN
+from models.supervised import RNN, EnrichedLSTM
+import metrics.classification as mc
 
 def parse_arguments(parser):
     parser.add_argument('--data_dir', type=str, default=None,
@@ -30,6 +34,8 @@ def parse_arguments(parser):
                         help='number of epochs to use for training')
     parser.add_argument('--train_size', type=float, default=0.5,
                         help='proportion of data to use for training')
+    parser.add_argument('--patience', type=int, default=5,
+                        help='patience hyperparameter for Keras')
     parser.add_argument('--seed', type=int, default=10221983,
                         help='seed to use for splitting the data')
     parser.add_argument('--enrichment_method', type=str, default='init',
@@ -43,7 +49,7 @@ if __name__ == '__main__':
     args = parse_arguments(parser)
     
     # Importing the integer sequences
-    int_sents = h5py.File(args.data_dir + args.integer_file, mode='r')
+    int_sents = h5py.File(args.data_dir + args.text_file, mode='r')
     X = np.array(int_sents['sents'])
     int_sents.close()
     
@@ -52,13 +58,14 @@ if __name__ == '__main__':
     records = pd.read_csv(args.data_dir + args.records_csv)
     
     # Making a variable for the classification target
-    y = records[args.target_column]
-    unique_codes = np.unique(y)
-    if len(unique_codes) == 2:
+    y_base = records[args.target_column].astype(int)
+    num_classes = len(np.unique(y_base))
+    y = to_categorical(y_base, num_classes=num_classes, dtype=int)
+    if y.shape[1] == 2:
         num_classes = 1
         loss = 'binary_crossentropy'
     else:
-        num_classes = len(unique_codes)
+        num_classes = y.shape[1]
         loss = 'categorical_crossentropy'
     
     # Importing the vocabulary
@@ -82,14 +89,11 @@ if __name__ == '__main__':
     rnn_f_drop = 0.00
     
     # Hyperparameters for the multimodal model
-    sparse_size = 120
+    sparse_size = sparse_records.shape[1]
     ehr_dense_size = 256
     ehr_e_size = 256
     ehr_e_drop = 0.85 
     ehr_r_drop = 0.00
-    
-    # Setting the target
-    y = args.records_cusv[args.target_column]
     
     # Splitting the data
     train, not_train = train_test_split(list(range(X.shape[0])),
@@ -102,22 +106,22 @@ if __name__ == '__main__':
                                  random_state=seed)
     
     # Training the encoder-decoder EHR model
-    ehr_modname = code + '_' + method
-    ehr_modpath = args.data_dir + 'models/' + ehr_modname + '.hdf5'
-    ehr = EHRClassifier(sparse_size,
-                        vocab_size,
-                        max_length,
-                        method=method,
-                        output_size=num_classes,
-                        embedding_size=ehr_e_size,
-                        hidden_size=ehr_dense_size,
-                        embeddings_dropout=ehr_e_drop,
-                        recurrent_dropout=ehr_r_drop)
+    ehr_modname = args.enrichment_method
+    ehr_modpath = args.data_dir + ehr_modname + '.hdf5'
+    ehr = EnrichedLSTM(sparse_size,
+                       vocab_size,
+                       max_length,
+                       method=args.enrichment_method,
+                       output_size=num_classes,
+                       embedding_size=ehr_e_size,
+                       hidden_size=ehr_dense_size,
+                       embeddings_dropout=ehr_e_drop,
+                       recurrent_dropout=ehr_r_drop)
     ehr_check = ModelCheckpoint(filepath=ehr_modpath,
                                 save_best_only=True,
                                 verbose=1)
     ehr_stop = EarlyStopping(monitor='val_loss',
-                             patience=1)
+                             patience=args.patience)
     ehr.compile(loss=loss, optimizer='adam')
     ehr.fit([sparse_records[train], X[train]], y[train],
             batch_size=fit_batch,
@@ -128,21 +132,8 @@ if __name__ == '__main__':
     ehr = load_model(ehr_modpath)
     
     # Loading the trained EHR model and getting the predictions
-    ehr_val_preds = ehr.predict([sparse_records[val], X[val]],
-                                batch_size=fit_batch)
-    ehr_gm = mc.grid_metrics(y[val], ehr_val_preds)
-    ehr_f1_cut = ehr_gm.cutoff[ehr_gm.f1.idxmax()]
-    ehr_mcn_cut = ehr_gm.cutoff[np.argmin(abs(ehr_gm.rel))]
     ehr_test_preds = ehr.predict([sparse_records[test], X[test]],
-                                 batch_size=fit_batch).flatten()
-    ehr_f1_guesses = mc.threshold(ehr_test_preds, ehr_f1_cut)
-    ehr_mcn_guesses = mc.threshold(ehr_test_preds, ehr_mcn_cut)
-    
-    # Getting the summary statistics for the EHR model
-    ehr_f1_stats = mc.binary_diagnostics(y[test], ehr_f1_guesses)
-    ehr_mcn_stats = mc.binary_diagnostics(y[test], ehr_mcn_guesses)
-    ehr_stats = pd.concat([ehr_f1_stats, ehr_mcn_stats], axis=0)
-    ehr_stats['cutoff'] = np.array([ehr_f1_cut, ehr_mcn_cut]).reshape(-1, 1)
-    ehr_stats.to_csv(args.data_dir + 'stats/' + ehr_modname + '_stats.csv', 
-                     index=False)
-
+                                 batch_size=fit_batch).argmax(axis=-1)
+    pd.DataFrame(ehr_test_preds).to_csv(args.data_dir + 'preds.csv', index=False)
+    f1 = f1_score(y[test], ehr_test_preds, average='macro')
+    print('Weighted macro F1 score is ' + str(f1))
