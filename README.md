@@ -8,7 +8,9 @@ We used emergency department (ED) visit record data to develop our models. The r
 
 ### Code
 Example preprocessing run:
-```python preprocessing.py --data_dir=C:/data/syndromic/ 
+```
+python preprocessing.py 
+--data_dir=C:/data/syndromic/ 
 --input_file=sample.csv 
 --file_type=csv 
 --text_column=cc 
@@ -18,10 +20,12 @@ Example preprocessing run:
 ```
 
 And an example training and test run:
-```python train_and_test.py --data_dir=C:/data/syndromic/ ^
---text_file=word_sents.hdf5 ^
---records_npz=sparse_records.npz ^
---records_csv=sample.csv ^
---target_column=ccs ^
+```
+python train_and_test.py 
+--data_dir=C:/data/syndromic/ 
+--text_file=word_sents.hdf5 
+--records_npz=sparse_records.npz 
+--records_csv=sample.csv 
+--target_column=ccs 
 --patience=1
 ```
