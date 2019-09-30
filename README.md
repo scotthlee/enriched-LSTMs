@@ -8,12 +8,12 @@ We used emergency department (ED) visit record data to develop our models. The r
 
 ### Code
 Example preprocessing run:
-```python preprocessing.py --data_dir=C:/data/syndromic/ ^
---input_file=sample.csv ^
---file_type=csv ^
---text_column=cc ^
---clean_text=True ^
---convert_numerals=True ^
+```python preprocessing.py --data_dir=C:/data/syndromic/ 
+--input_file=sample.csv 
+--file_type=csv 
+--text_column=cc 
+--clean_text=True 
+--convert_numerals=True 
 --target_column=ccs
 ```
 
