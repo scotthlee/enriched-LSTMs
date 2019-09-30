@@ -80,6 +80,7 @@ if __name__ == '__main__':
     max_length = X.shape[1]
     vocab_size = len(vocab.keys())
     seed = args.seed
+    patience = args.patience
     
     # Hyperparameters for the LSTM
     rnn_e_size = 256
@@ -121,7 +122,7 @@ if __name__ == '__main__':
                                 save_best_only=True,
                                 verbose=1)
     ehr_stop = EarlyStopping(monitor='val_loss',
-                             patience=args.patience)
+                             patience=patience)
     ehr.compile(loss=loss, optimizer='adam')
     ehr.fit([sparse_records[train], X[train]], y[train],
             batch_size=fit_batch,
@@ -133,7 +134,8 @@ if __name__ == '__main__':
     
     # Loading the trained EHR model and getting the predictions
     ehr_test_preds = ehr.predict([sparse_records[test], X[test]],
-                                 batch_size=fit_batch).argmax(axis=-1)
-    pd.DataFrame(ehr_test_preds).to_csv(args.data_dir + 'preds.csv', index=False)
-    f1 = f1_score(y[test], ehr_test_preds, average='macro')
+                                 batch_size=fit_batch).argmax(axis=1)
+    pd.DataFrame(ehr_test_preds).to_csv(args.data_dir + 'preds.csv', 
+                                        index=False)
+    f1 = f1_score(y_base[test], ehr_test_preds, average='macro')
     print('Weighted macro F1 score is ' + str(f1))
